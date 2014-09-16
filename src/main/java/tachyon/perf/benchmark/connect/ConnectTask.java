@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
 import tachyon.perf.basic.PerfTask;
@@ -26,13 +27,13 @@ public class ConnectTask extends PerfTask implements Supervisible {
   protected boolean setupTask(TaskContext taskContext) {
     PerfConf perfConf = PerfConf.get();
     try {
-      TachyonFS tfs = TachyonFS.get(perfConf.TFS_ADDRESS);
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(perfConf.TFS_ADDRESS));
       String workDir = perfConf.TFS_DIR + "/" + mId;
-      if (tfs.exist(workDir)) {
-        tfs.delete(workDir, true);
+      if (tfs.exist(new TachyonURI(workDir))) {
+        tfs.delete(new TachyonURI(workDir), true);
         LOG.warn("The work dir " + workDir + " already exists, delete it");
       }
-      tfs.mkdir(workDir);
+      tfs.mkdir(new TachyonURI(workDir));
       LOG.info("Create the write dir " + workDir);
 
       int threadsNum = mTaskConf.getIntProperty("threads.num");
@@ -44,8 +45,6 @@ public class ConnectTask extends PerfTask implements Supervisible {
       }
       LOG.info("Create " + threadsNum + " connect threads");
       tfs.close();
-    } catch (TException e) {
-      LOG.warn("Failed to close TachyonFS", e);
     } catch (IOException e) {
       LOG.error("Error when setup connect task", e);
       return false;
@@ -73,8 +72,8 @@ public class ConnectTask extends PerfTask implements Supervisible {
   }
 
   @Override
-  public boolean cleanupWorkspace() {
-    return true;
+  public String cleanupWorkspace() {
+    return PerfConf.get().TFS_DIR;
   }
   
   @Override

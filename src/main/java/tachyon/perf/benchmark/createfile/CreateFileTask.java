@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
 import tachyon.perf.basic.PerfTask;
@@ -20,10 +21,10 @@ public class CreateFileTask extends PerfTask implements Supervisible {
     PerfConf perfConf = PerfConf.get();
     ((CreateFileTaskContext) taskContext).initial();
     try {
-      TachyonFS tfs = TachyonFS.get(perfConf.TFS_ADDRESS);
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(perfConf.TFS_ADDRESS));
       String workDir = perfConf.TFS_DIR + "/CreateFile";
-      if (!tfs.exist(workDir)) {
-        tfs.mkdir(workDir);
+      if (!tfs.exist(new TachyonURI(workDir))) {
+        tfs.mkdir(new TachyonURI(workDir));
         LOG.info("Create the work dir " + workDir);
       }
       int threadsNum = mTaskConf.getIntProperty("threads.num");
@@ -36,8 +37,6 @@ public class CreateFileTask extends PerfTask implements Supervisible {
       }
       LOG.info("Create " + threadsNum + " create file threads");
       tfs.close();
-    } catch (TException e) {
-      LOG.warn("Failed to close TachyonFS", e);
     } catch (IOException e) {
       LOG.error("Error when setup create file task", e);
       return false;
@@ -90,8 +89,8 @@ public class CreateFileTask extends PerfTask implements Supervisible {
   }
   
   @Override
-  public boolean cleanupWorkspace() {
-    return true;
+  public String cleanupWorkspace() {
+    return PerfConf.get().TFS_DIR;
   }
 
   @Override

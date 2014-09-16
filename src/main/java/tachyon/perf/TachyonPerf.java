@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.perf.basic.PerfTask;
 import tachyon.perf.basic.TaskConfiguration;
@@ -38,8 +39,8 @@ public class TachyonPerf {
     }
 
     try {
-      TachyonFS tfs = TachyonFS.get(PerfConf.get().TFS_ADDRESS);
-      while (!tfs.exist(PerfConf.get().TFS_DIR + "/SYNC_START_SIGNAL")) {
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(PerfConf.get().TFS_ADDRESS));
+      while (!tfs.exist(new TachyonURI(PerfConf.get().TFS_DIR + "/SYNC_START_SIGNAL"))) {
         Thread.sleep(500);
       }
       tfs.close();

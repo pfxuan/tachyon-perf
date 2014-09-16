@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.OutStream;
 import tachyon.client.TachyonFS;
 import tachyon.client.TachyonFile;
@@ -49,7 +50,7 @@ public class WriteThread implements Runnable {
     mStatistic.setStartTimeMs(System.currentTimeMillis());
     TachyonFS tachyonClient;
     try {
-      tachyonClient = TachyonFS.get(mTfsAddress);
+      tachyonClient = TachyonFS.get(new TachyonURI(mTfsAddress));
     } catch (IOException e) {
       LOG.error("Write Thread " + ID + " falied to connect Tachyon");
       throw new RuntimeException(e);
@@ -59,7 +60,7 @@ public class WriteThread implements Runnable {
     for (String fileName : mWriteFileList) {
       try {
         int fileId = -1;
-        fileId = tachyonClient.createFile(fileName);
+        fileId = tachyonClient.createFile(new TachyonURI(fileName));
         if (fileId == -1) {
           throw new IOException("Failed to create file " + fileName);
         }

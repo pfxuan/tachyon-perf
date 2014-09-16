@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
 import tachyon.perf.PerfConstants;
@@ -57,22 +58,20 @@ public abstract class PerfTask {
     taskContext.setStartTimeMs(System.currentTimeMillis());
     if (this instanceof Supervisible) {
       try {
-        TachyonFS tfs = TachyonFS.get(PerfConf.get().TFS_ADDRESS);
+        TachyonFS tfs = TachyonFS.get(new TachyonURI(PerfConf.get().TFS_ADDRESS));
         String tfsFailedFilePath = ((Supervisible) this).getTfsFailedPath();
         String tfsReadyFilePath = ((Supervisible) this).getTfsReadyPath();
         String tfsSuccessFilePath = ((Supervisible) this).getTfsSuccessPath();
-        if (tfs.exist(tfsFailedFilePath)) {
-          tfs.delete(tfsFailedFilePath, true);
+        if (tfs.exist(new TachyonURI(tfsFailedFilePath))) {
+          tfs.delete(new TachyonURI(tfsFailedFilePath), true);
         }
-        if (tfs.exist(tfsReadyFilePath)) {
-          tfs.delete(tfsReadyFilePath, true);
+        if (tfs.exist(new TachyonURI(tfsReadyFilePath))) {
+          tfs.delete(new TachyonURI(tfsReadyFilePath), true);
         }
-        if (tfs.exist(tfsSuccessFilePath)) {
-          tfs.delete(tfsSuccessFilePath, true);
+        if (tfs.exist(new TachyonURI(tfsSuccessFilePath))) {
+          tfs.delete(new TachyonURI(tfsSuccessFilePath), true);
         }
         tfs.close();
-      } catch (TException e) {
-        LOG.warn("Failed to close TachyonFS", e);
       } catch (IOException e) {
         LOG.error("Failed to setup Supervisible task", e);
         return false;
@@ -84,12 +83,10 @@ public abstract class PerfTask {
   public boolean run(TaskContext taskContext) {
     if (this instanceof Supervisible) {
       try {
-        TachyonFS tfs = TachyonFS.get(PerfConf.get().TFS_ADDRESS);
+        TachyonFS tfs = TachyonFS.get(new TachyonURI(PerfConf.get().TFS_ADDRESS));
         String tfsReadyFilePath = ((Supervisible) this).getTfsReadyPath();
-        tfs.createFile(tfsReadyFilePath);
+        tfs.createFile(new TachyonURI(tfsReadyFilePath));
         tfs.close();
-      } catch (TException e) {
-        LOG.warn("Failed to close TachyonFS", e);
       } catch (IOException e) {
         LOG.error("Failed to start Supervisible task", e);
         return false;
@@ -117,17 +114,15 @@ public abstract class PerfTask {
     }
     if (this instanceof Supervisible) {
       try {
-        TachyonFS tfs = TachyonFS.get(PerfConf.get().TFS_ADDRESS);
+        TachyonFS tfs = TachyonFS.get(new TachyonURI(PerfConf.get().TFS_ADDRESS));
         String tfsFailedFilePath = ((Supervisible) this).getTfsFailedPath();
         String tfsSuccessFilePath = ((Supervisible) this).getTfsSuccessPath();
         if (taskContext.getSuccess() && ret) {
-          tfs.createFile(tfsSuccessFilePath);
+          tfs.createFile(new TachyonURI(tfsSuccessFilePath));
         } else {
-          tfs.createFile(tfsFailedFilePath);
+          tfs.createFile(new TachyonURI(tfsFailedFilePath));
         }
         tfs.close();
-      } catch (TException e) {
-        LOG.warn("Failed to close TachyonFS", e);
       } catch (IOException e) {
         LOG.error("Failed to start Supervisible task", e);
         ret = false;

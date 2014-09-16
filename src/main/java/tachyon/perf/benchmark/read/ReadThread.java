@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.InStream;
 import tachyon.client.ReadType;
 import tachyon.client.TachyonFS;
@@ -46,7 +47,7 @@ public class ReadThread implements Runnable {
     mStatistic.setStartTimeMs(System.currentTimeMillis());
     TachyonFS tachyonClient;
     try {
-      tachyonClient = TachyonFS.get(mTfsAddress);
+      tachyonClient = TachyonFS.get(new TachyonURI(mTfsAddress));
     } catch (IOException e) {
       LOG.error("Read Thread " + ID + " falied to connect Tachyon");
       throw new RuntimeException(e);

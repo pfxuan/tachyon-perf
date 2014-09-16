@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
 import tachyon.perf.PerfConstants;
@@ -137,9 +138,9 @@ public class TachyonPerfSupervision {
 
     PerfConf perfConf = PerfConf.get();
     try {
-      TachyonFS tfs = TachyonFS.get(perfConf.TFS_ADDRESS);
-      if (!tfs.exist(perfConf.TFS_DIR + "/SYNC_START_SIGNAL")) {
-        tfs.createFile(perfConf.TFS_DIR + "/SYNC_START_SIGNAL");
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(perfConf.TFS_ADDRESS));
+      if (!tfs.exist(new TachyonURI(perfConf.TFS_DIR + "/SYNC_START_SIGNAL"))) {
+        tfs.createFile(new TachyonURI(perfConf.TFS_DIR + "/SYNC_START_SIGNAL"));
       }
 
       int round = 0;
@@ -148,8 +149,8 @@ public class TachyonPerfSupervision {
         for (int i = 0; i < sSlaveStates.length; i++) {
           if (sSlaveStates[i] == SLAVE_STATE_INITIAL) {
             String readyPath = ((Supervisible) sSlaveTasks[i]).getTfsReadyPath();
-            if (tfs.exist(readyPath)) {
-              tfs.delete(readyPath, true);
+            if (tfs.exist(new TachyonURI(readyPath))) {
+              tfs.delete(new TachyonURI(readyPath), true);
               sSlaveStates[i] = SLAVE_STATE_RUNNING;
               String runningInfo = "Slave-" + i + "(" + slaves.get(i) + ") is running";
               System.out.println(" [ " + runningInfo + " ]");
@@ -158,14 +159,14 @@ public class TachyonPerfSupervision {
           } else if (sSlaveStates[i] == SLAVE_STATE_RUNNING) {
             String failedPath = ((Supervisible) sSlaveTasks[i]).getTfsFailedPath();
             String successPath = ((Supervisible) sSlaveTasks[i]).getTfsSuccessPath();
-            if (tfs.exist(failedPath)) {
-              tfs.delete(failedPath, true);
+            if (tfs.exist(new TachyonURI(failedPath))) {
+              tfs.delete(new TachyonURI(failedPath), true);
               sSlaveStates[i] = SLAVE_STATE_FAILED;
               String failedInfo = "Failed: Slave-" + i + "(" + slaves.get(i) + ")";
               System.out.println(" [ " + failedInfo + " ]");
               LOG.info(failedInfo);
-            } else if (tfs.exist(successPath)) {
-              tfs.delete(successPath, true);
+            } else if (tfs.exist(new TachyonURI(successPath))) {
+              tfs.delete(new TachyonURI(successPath), true);
               sSlaveStates[i] = SLAVE_STATE_SUCCESS;
               String successInfo = "Success: Slave-" + i + "(" + slaves.get(i) + ")";
               System.out.println(" [ " + successInfo + " ]");
@@ -183,15 +184,16 @@ public class TachyonPerfSupervision {
           break;
         }
       }
-      if (tfs.exist(perfConf.TFS_DIR + "/SYNC_START_SIGNAL")) {
-        tfs.delete(perfConf.TFS_DIR + "/SYNC_START_SIGNAL", false);
+      if (tfs.exist(new TachyonURI(perfConf.TFS_DIR + "/SYNC_START_SIGNAL"))) {
+        tfs.delete(new TachyonURI(perfConf.TFS_DIR + "/SYNC_START_SIGNAL"), false);
       }
-      if (((Supervisible) sSlaveTasks[0]).cleanupWorkspace()) {
-        tfs.delete(perfConf.TFS_DIR, true);
+	  for (PerfTask task : sSlaveTasks) {
+        String cleanup = ((Supervisible) task).cleanupWorkspace();
+        if (cleanup != null) {
+          tfs.delete(new TachyonURI(cleanup), true);
+        }
       }
       tfs.close();
-    } catch (TException e) {
-      LOG.warn("Failed to close TachyonFS.", e);
     } catch (IOException e) {
       e.printStackTrace();
       System.err.println("Error when wait all slaves.");

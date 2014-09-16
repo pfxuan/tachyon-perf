@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.OutStream;
 import tachyon.client.TachyonFS;
 import tachyon.client.TachyonFile;
@@ -45,9 +46,9 @@ public class CreateFileThread implements Runnable {
   @Override
   public void run() {
     try {
-      TachyonFS tfs = TachyonFS.get(mTfsAddress);
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(mTfsAddress));
       for (int i = 0; i < mFileNum; i++) {
-        int fileId = tfs.createFile(mTargetDir + "/" + ID + "-" + i);
+        int fileId = tfs.createFile(new TachyonURI(mTargetDir + "/" + ID + "-" + i));
         if (mFileLength > 0) {
           TachyonFile file = tfs.getFile(fileId);
           OutStream os = file.getOutStream(WriteType.TRY_CACHE);

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
 import tachyon.perf.PerfConstants;
@@ -43,7 +44,7 @@ public class ConnectThread implements Runnable {
     mStatistic.setStartTimeMs(System.currentTimeMillis());
     try {
       for (int i = 0; i < mClients.length; i++) {
-        mClients[i] = TachyonFS.get(mTfsAddress);
+        mClients[i] = TachyonFS.get(new TachyonURI(mTfsAddress));
       }
     } catch (IOException e) {
       LOG.error("Connect Thread " + ID + " falied to connect Tachyon", e);
@@ -59,13 +60,13 @@ public class ConnectThread implements Runnable {
           mClients[nextClient].delete(fileId, true);
           nextOp = OP_MKDIR;
         } else if (nextOp == OP_GET) {
-          fileId = mClients[nextClient].getFileId(mTargetDir);
+          fileId = mClients[nextClient].getFileId(new TachyonURI(mTargetDir));
           nextOp = OP_RENAME;
         } else if (nextOp == OP_MKDIR) {
-          mClients[nextClient].mkdir(mTargetDir);
+          mClients[nextClient].mkdir(new TachyonURI(mTargetDir));
           nextOp = OP_GET;
         } else if (nextOp == OP_RENAME) {
-          mClients[nextClient].rename(fileId, mTargetDir + "-");
+          mClients[nextClient].rename(fileId, new TachyonURI(mTargetDir + "-"));
           nextOp = OP_DELETE;
         }
         nextClient = (nextClient + 1) % mClients.length;
@@ -79,7 +80,7 @@ public class ConnectThread implements Runnable {
     for (int i = 0; i < mClients.length; i++) {
       try {
         mClients[i].close();
-      } catch (TException e) {
+      } catch (IOException e) {
         LOG.warn("Connect Thread " + ID + " falied to close TachyonFS", e);
       }
     }

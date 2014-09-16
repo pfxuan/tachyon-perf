@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import tachyon.TachyonURI;
 import tachyon.client.ReadType;
 import tachyon.client.TachyonFS;
 import tachyon.org.apache.thrift.TException;
@@ -35,17 +36,17 @@ public class ReadTask extends PerfTask implements Supervisible {
     try {
       mReadType = ReadType.getOpType(mTaskConf.getProperty("read.type"));
       ((ReadTaskContext) taskContext).initial(mReadType);
-      TachyonFS tfs = TachyonFS.get(perfConf.TFS_ADDRESS);
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(perfConf.TFS_ADDRESS));
       String readDir = perfConf.TFS_DIR + "/" + mId;
-      if (!tfs.exist(readDir)) {
+      if (!tfs.exist(new TachyonURI(readDir))) {
         LOG.error("The read dir " + readDir + " is not exist. " + "Do the write test fisrt");
         return false;
       }
-      if (tfs.getFile(readDir).isFile()) {
+      if (tfs.getFile(new TachyonURI(readDir)).isFile()) {
         LOG.error("The read dir " + readDir + " is not a directory. " + "Do the write test fisrt");
         return false;
       }
-      List<ClientFileInfo> listedFiles = tfs.listStatus(readDir);
+      List<ClientFileInfo> listedFiles = tfs.listStatus(new TachyonURI(readDir));
       List<Integer> readFileCandidates = new ArrayList<Integer>(listedFiles.size());
       for (ClientFileInfo fileInfo : listedFiles) {
         readFileCandidates.add(fileInfo.id);
@@ -68,8 +69,6 @@ public class ReadTask extends PerfTask implements Supervisible {
       }
       LOG.info("Create " + threadsNum + " read threads");
       tfs.close();
-    } catch (TException e) {
-      LOG.warn("Failed to close TachyonFS", e);
     } catch (IOException e) {
       LOG.error("Error when setup read task", e);
       return false;
@@ -97,8 +96,8 @@ public class ReadTask extends PerfTask implements Supervisible {
   }
 
   @Override
-  public boolean cleanupWorkspace() {
-    return false;
+  public String cleanupWorkspace() {
+    return null;
   }
 
   @Override

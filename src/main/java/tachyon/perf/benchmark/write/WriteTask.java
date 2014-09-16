@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import tachyon.TachyonURI;
 import tachyon.client.TachyonFS;
 import tachyon.client.WriteType;
 import tachyon.org.apache.thrift.TException;
@@ -34,13 +35,13 @@ public class WriteTask extends PerfTask implements Supervisible {
     try {
       mWriteType = WriteType.getOpType(mTaskConf.getProperty("write.type"));
       ((WriteTaskContext) taskContext).initial(mWriteType);
-      TachyonFS tfs = TachyonFS.get(perfConf.TFS_ADDRESS);
+      TachyonFS tfs = TachyonFS.get(new TachyonURI(perfConf.TFS_ADDRESS));
       String writeDir = perfConf.TFS_DIR + "/" + mId;
-      if (tfs.exist(writeDir)) {
-        tfs.delete(writeDir, true);
+      if (tfs.exist(new TachyonURI(writeDir))) {
+        tfs.delete(new TachyonURI(writeDir), true);
         LOG.warn("The write dir " + writeDir + " already exists, delete it");
       }
-      tfs.mkdir(writeDir);
+      tfs.mkdir(new TachyonURI(writeDir));
       LOG.info("Create the write dir " + writeDir);
 
       int threadsNum = mTaskConf.getIntProperty("threads.num");
@@ -56,8 +57,6 @@ public class WriteTask extends PerfTask implements Supervisible {
       }
       LOG.info("Create " + threadsNum + " write threads");
       tfs.close();
-    } catch (TException e) {
-      LOG.warn("Failed to close TachyonFS", e);
     } catch (IOException e) {
       LOG.error("Error when setup write task", e);
       return false;
@@ -85,8 +84,8 @@ public class WriteTask extends PerfTask implements Supervisible {
   }
 
   @Override
-  public boolean cleanupWorkspace() {
-    return false;
+  public String cleanupWorkspace() {
+    return null;
   }
 
   @Override
